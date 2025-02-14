@@ -44,7 +44,6 @@ public class CXKProgressBarUI extends BasicProgressBarUI {
     private long lastUpdate = 0;
     private boolean isDisposed = false;
     private boolean wasIndeterminate = false;
-    private Clip audioClip;
     private JProgressBar currentBar;  // 添加这个字段保存当前进度条引用
 
     @SuppressWarnings({"MethodOverridesStaticMethodOfSuperclass", "UnusedDeclaration"})
@@ -64,114 +63,15 @@ public class CXKProgressBarUI extends BasicProgressBarUI {
         isDisposed = false;
         LOG.info("安装UI到组件: " + c.getClass().getName());
         ensureFramesLoaded();
-        loadAudioClip();
         
         if (c instanceof JProgressBar) {
             currentBar = (JProgressBar) c;
             wasIndeterminate = currentBar.isIndeterminate();
-            
-            // 添加层次结构监听器，等待组件被添加到父容器
-            currentBar.addHierarchyListener(e -> {
-                if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED) != 0) {
-                    LOG.info("进度条父容器变更");
-                    setupCancelButton();
-                }
-            });
-            
-            // 立即尝试一次设置
-            setupCancelButton();
-        }
-    }
-
-    private void setupCancelButton() {
-        if (currentBar == null || isDisposed) return;
-        
-        Container parent = currentBar.getParent();
-        if (parent != null) {
-            LOG.info("正在查找取消按钮...");
-            LOG.info("父容器类型: " + parent.getClass().getName());
-            
-            // 递归查找所有父容器
-            Container topParent = parent;
-            while (topParent.getParent() != null) {
-                topParent = topParent.getParent();
-            }
-            
-            // 递归查找按钮
-            findAndSetupCancelButton(topParent);
-        }
-    }
-
-    private void findAndSetupCancelButton(Container container) {
-        for (Component comp : container.getComponents()) {
-            if (comp instanceof AbstractButton) {  // 使用 AbstractButton 作为基类
-                AbstractButton button = (AbstractButton) comp;
-                String className = button.getClass().getName();
-                LOG.info("找到按钮: actionCommand=" + button.getActionCommand() 
-                        + ", icon=" + (button.getIcon() != null ? button.getIcon().toString() : "null")
-                        + ", text=" + button.getText()
-                        + ", class=" + className);
-                
-                // 检查是否是取消按钮
-                boolean isCancel = false;
-                
-                // 检查常规取消按钮
-                if ((button.getActionCommand() != null && 
-                     (button.getActionCommand().equals("Cancel") || 
-                      button.getActionCommand().equals("Stop") || 
-                      button.getActionCommand().equals("stop"))) ||
-                    "Cancel".equals(button.getText()) ||
-                    "Stop".equals(button.getText())) {
-                    isCancel = true;
-                }
-                
-                // 检查进度条上的内联取消按钮
-                if (className.contains("InplaceButton") && 
-                    button.getParent() != null && 
-                    button.getParent().getClass().getName().contains("ProgressIndicator")) {
-                    isCancel = true;
-                }
-                
-                if (isCancel) {
-                    LOG.info("找到取消按钮，添加监听器");
-                    
-                    // 移除现有的监听器
-                    MouseListener[] mouseListeners = button.getMouseListeners();
-                    for (MouseListener listener : mouseListeners) {
-                        if (listener.toString().contains("playStopSound")) {
-                            button.removeMouseListener(listener);
-                        }
-                    }
-                    
-                    // 添加新的监听器
-                    button.addMouseListener(new MouseAdapter() {
-                        @Override
-                        public void mousePressed(MouseEvent e) {
-                            playStopSound();
-                        }
-                        
-                        @Override
-                        public void mouseReleased(MouseEvent e) {
-                            playStopSound();
-                        }
-                    });
-                    
-                    LOG.info("成功添加取消按钮监听器");
-                }
-            }
-            
-            // 递归查找子容器
-            if (comp instanceof Container) {
-                findAndSetupCancelButton((Container) comp);
-            }
         }
     }
 
     @Override
     public void uninstallUI(JComponent c) {
-        if (audioClip != null) {
-            audioClip.close();
-        }
         currentBar = null;  // 清除引用
         isDisposed = true;
         super.uninstallUI(c);
@@ -518,104 +418,5 @@ public class CXKProgressBarUI extends BasicProgressBarUI {
         LOG.info("=== CXK Progress Bar UI 被创建 ===");
         // 立即加载图片
         loadImages();
-    }
-
-    private void loadAudioClip() {
-        try {
-            if (audioClip != null) {
-                audioClip.close();
-            }
-            
-            // 尝试多个可能的路径
-            URL url = null;
-            String[] possiblePaths = {
-                "/audio/stop.wav",
-                "/sounds/stop.wav",
-                "sounds/stop.wav",
-                "audio/stop.wav",
-                "/com/fina/cxkprogressbar/sounds/stop.wav",
-                "/com/fina/cxkprogressbar/audio/stop.wav"
-            };
-            
-            for (String path : possiblePaths) {
-                url = getClass().getResource(path);
-                if (url != null) {
-                    LOG.info("找到音频文件: " + path);
-                    break;
-                }
-            }
-            
-            if (url == null) {
-                // 尝试使用 ClassLoader
-                ClassLoader classLoader = getClass().getClassLoader();
-                for (String path : possiblePaths) {
-                    url = classLoader.getResource(path.startsWith("/") ? path.substring(1) : path);
-                    if (url != null) {
-                        LOG.info("通过ClassLoader找到音频文件: " + path);
-                        break;
-                    }
-                }
-            }
-            
-            if (url != null) {
-                LOG.info("正在加载音频文件: " + url);
-                try (AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(
-                        new BufferedInputStream(url.openStream()))) {
-                    
-                    // 转换为支持的音频格式
-                    AudioFormat targetFormat = new AudioFormat(
-                        AudioFormat.Encoding.PCM_SIGNED,
-                        44100.0f,
-                        16,
-                        2,
-                        4,
-                        44100.0f,
-                        false
-                    );
-                    
-                    // 转换音频流
-                    try (AudioInputStream convertedStream = 
-                            AudioSystem.getAudioInputStream(targetFormat, audioInputStream)) {
-                        audioClip = AudioSystem.getClip();
-                        audioClip.open(convertedStream);
-                        LOG.info("✅ 音效加载成功");
-                    }
-                }
-            } else {
-                LOG.error("❌ 找不到音效文件，尝试过以下路径:");
-                for (String path : possiblePaths) {
-                    LOG.error("  - " + path);
-                }
-            }
-        } catch (Exception e) {
-            LOG.error("加载音效失败", e);
-            if (e instanceof LineUnavailableException) {
-                LOG.error("音频系统不可用");
-            } else if (e instanceof UnsupportedAudioFileException) {
-                LOG.error("不支持的音频格式");
-            } else if (e instanceof IOException) {
-                LOG.error("读取音频文件失败");
-            }
-        }
-    }
-
-    private void playStopSound() {
-        LOG.info("取消按钮被点击 - 开始处理");
-        try {
-            if (audioClip != null && !isDisposed) {
-                if (audioClip.isRunning()) {
-                    LOG.info("停止当前正在播放的音效");
-                    audioClip.stop();
-                }
-                
-                audioClip.setFramePosition(0);
-                audioClip.start();
-                LOG.info("✅ 音效播放成功启动");
-            } else {
-                LOG.info("❌ 无法播放音效: audioClip=" + (audioClip != null) + ", isDisposed=" + isDisposed);
-            }
-        } catch (Exception ex) {
-            LOG.error("播放音效时发生错误", ex);
-        }
     }
 } 

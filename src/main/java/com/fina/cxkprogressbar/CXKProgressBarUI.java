@@ -2,7 +2,6 @@ package com.fina.cxkprogressbar;
 
 import com.intellij.openapi.ui.GraphicsConfig;
 import com.intellij.ui.Gray;
-import com.intellij.ui.InplaceButton;
 import com.intellij.ui.JBColor;
 import com.intellij.util.ui.GraphicsUtil;
 import com.intellij.util.ui.JBUI;
@@ -14,21 +13,11 @@ import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicProgressBarUI;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.net.URL;
-import java.awt.event.HierarchyEvent;
-import javax.sound.sampled.*;
-import java.io.BufferedInputStream;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseAdapter;
-
-import static java.awt.desktop.UserSessionEvent.Reason.LOCK;
 
 public class CXKProgressBarUI extends BasicProgressBarUI {
     private static final Logger LOG = Logger.getInstance(CXKProgressBarUI.class);
@@ -157,8 +146,7 @@ public class CXKProgressBarUI extends BasicProgressBarUI {
             return;
         }
         
-        if (image instanceof BufferedImage) {
-            BufferedImage bi = (BufferedImage) image;
+        if (image instanceof BufferedImage bi) {
             LOG.info(String.format(prefix + "图片信息: 类型=%d, 尺寸=%dx%d, 透明=%b, 颜色模型=%s",
                 bi.getType(),
                 bi.getWidth(),
@@ -264,11 +252,10 @@ public class CXKProgressBarUI extends BasicProgressBarUI {
 
     @Override
     protected void paintDeterminate(Graphics g2d, JComponent c) {
-        if (!(g2d instanceof Graphics2D)) {
+        if (!(g2d instanceof Graphics2D g)) {
             return;
         }
 
-        Graphics2D g = (Graphics2D) g2d;
         Insets b = progressBar.getInsets();
         int width = progressBar.getWidth() - (b.right + b.left);
         int height = progressBar.getHeight() - (b.top + b.bottom);
@@ -415,7 +402,6 @@ public class CXKProgressBarUI extends BasicProgressBarUI {
     }
 
     public CXKProgressBarUI() {
-        LOG.info("=== CXK Progress Bar UI 被创建 ===");
         // 立即加载图片
         loadImages();
     }

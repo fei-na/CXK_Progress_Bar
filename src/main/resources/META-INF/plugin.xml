@@ -5,24 +5,24 @@
     <vendor email="53124742@qq.com">Fina</vendor>
 
     <description><![CDATA[
-        这是一位会唱跳rap的明星，把它变成的进度条！<br>
-
         This is a celebrity who can sing, dance, and rap, turn it into a progress bar!.<br>
 
-        坤哥再次出现，这次他带来了流畅的铁山靠和优美的音乐（并没有声音）！<br>
-        进度条主要是由一个迷你的五线谱，一些音符，以及我们的主角——坤哥组成！<br>
+        这是一位会唱跳rap的明星，把它变成的进度条！<br>
 
         Cai Xukun appeared again, <br>
         this time bringing smooth iron mountains and beautiful music (without sound)!<br>
         The progress bar is mainly composed of a mini staff, some notes,<br>
         and our protagonist - Cai Xukun.<br>
 
-        但是坤哥非常怕黑，对于黑色主题来讲，相性非常的不好，最好使用白色主题。<br>
+        坤哥再次出现，这次他带来了流畅的铁山靠和优美的音乐（并没有声音）！<br>
+        进度条主要是由一个迷你的五线谱，一些音符，以及我们的主角——坤哥组成！<br>
 
         However, Cai Xukun is afraid of black, and the compatibility with black themes is very bad,<br>
         so it is recommended to use white themes.<br>
+
+        但是坤哥非常怕黑，对于黑色主题来讲，相性非常的不好，最好使用白色主题。<br>
     ]]></description>
-    <version>1.0.0</version>
+    <version>1.0.2</version>
 
     <!-- 只保留必要的依赖 -->
     <depends>com.intellij.modules.platform</depends>

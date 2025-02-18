@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.fina"
-version = "1.0.2"
+version = "1.0.3"
 
 repositories {
     maven { url = uri("https://repo.huaweicloud.com/repository/maven/") }

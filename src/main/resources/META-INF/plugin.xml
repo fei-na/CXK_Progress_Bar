@@ -22,7 +22,7 @@
 
         但是坤哥非常怕黑，对于黑色主题来讲，相性非常的不好，最好使用白色主题。<br>
     ]]></description>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 
     <!-- 只保留必要的依赖 -->
     <depends>com.intellij.modules.platform</depends>

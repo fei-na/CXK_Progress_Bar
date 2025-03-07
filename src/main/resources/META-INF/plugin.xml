@@ -22,7 +22,30 @@
 
         但是坤哥非常怕黑，对于黑色主题来讲，相性非常的不好，最好使用白色主题。<br>
     ]]></description>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
+
+    <change-notes><![CDATA[
+        <h3>1.0.4</h3>
+        <ul>
+            <li>解决了卸载会卡死的问题</li>
+        </ul>
+        <br>
+        <h3>1.0.0</h3>
+        <ul>
+            <li>首次发布</li>
+        </ul>
+
+        <br>
+        <h3>1.0.4 (English)</h3>
+        <ul>
+            <li>Solved the problem of freezing during uninstallation</li>
+        </ul>
+        <br>
+        <h3>1.0.0 (English)</h3>
+        <ul>
+            <li>Initial release</li>
+        </ul>
+    ]]></change-notes>
 
     <!-- 只保留必要的依赖 -->
     <depends>com.intellij.modules.platform</depends>

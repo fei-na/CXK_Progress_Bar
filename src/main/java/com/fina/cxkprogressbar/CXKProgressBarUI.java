@@ -61,8 +61,9 @@ public class CXKProgressBarUI extends BasicProgressBarUI {
 
     @Override
     public void uninstallUI(JComponent c) {
-        currentBar = null;  // 清除引用
         isDisposed = true;
+        currentBar = null;  // 清除引用
+        LOG.info("卸载UI，停止动画");
         super.uninstallUI(c);
     }
 
@@ -256,6 +257,11 @@ public class CXKProgressBarUI extends BasicProgressBarUI {
             return;
         }
 
+        // 检查组件是否可见，如果不可见则不继续动画
+        if (!c.isShowing() || !c.isVisible()) {
+            return;
+        }
+
         Insets b = progressBar.getInsets();
         int width = progressBar.getWidth() - (b.right + b.left);
         int height = progressBar.getHeight() - (b.top + b.bottom);
@@ -292,105 +298,105 @@ public class CXKProgressBarUI extends BasicProgressBarUI {
         g.translate(0, -(c.getHeight() - h) / 2);
         config.restore();
 
-        // 继续动画
-        if (!isDisposed) {
+        // 继续动画，但只有在组件仍然可见且未被销毁时
+        if (!isDisposed && c.isShowing() && c.isVisible()) {
             c.repaint(FRAME_DELAY);
         }
     }
 
+    // 在类定义中添加一个静态方法来停止所有动画
+    public static void stopAllAnimations() {
+        LOG.info("强制停止所有进度条动画");
+        // 设置一个静态标志，所有实例都会检查这个标志
+        isGloballyDisposed = true;
+    }
+
+    // 在类的顶部添加静态字段
+    private static volatile boolean isGloballyDisposed = false;
+
+    // 修改 paintIndeterminate 方法，在开始时检查全局状态
     @Override
     protected void paintIndeterminate(Graphics g2d, JComponent c) {
-        if (isDisposed) {
-            LOG.info("组件已销毁，跳过绘制");
+        // 检查全局状态和应用程序状态
+        if (isDisposed || isGloballyDisposed || !CXKApplicationComponent.isApplicationActive()) {
+            LOG.info("组件已销毁或应用程序不活跃，跳过绘制");
             return;
         }
-
-        // 确保图片已加载
-        ensureFramesLoaded();
-
-        if (frames == null || frames.isEmpty()) {
-            LOG.error("⚠️ 无可用帧，使用默认进度条");
-            super.paintIndeterminate(g2d, c);
+        
+        if (!(g2d instanceof Graphics2D)) {
             return;
         }
-
-        try {
-            if (!(g2d instanceof Graphics2D)) {
-                return;
-            }
-
-            Graphics2D g = (Graphics2D) g2d;
-            Insets b = progressBar.getInsets();
-            int width = progressBar.getWidth() - (b.right + b.left);
-            int height = progressBar.getHeight() - (b.top + b.bottom);
-
-            if (width <= 0 || height <= 0) {
-                return;
-            }
-
-            GraphicsConfig config = GraphicsUtil.setupAAPainting(g);
-            g.translate(0, (c.getHeight() - height) / 2);
-
-            // 计算尺寸
-            final int h = getPreferredSize(c).height;
-            final float lineSpacing = h / 6.0f;  // 五线谱间距
-            
-            // 绘制背景
-            Container parent = c.getParent();
-            Color background = parent != null ? parent.getBackground() : UIUtil.getPanelBackground();
-            
-            if (!isEven(c.getHeight() - h)) height++;
-
-            final float R = JBUI.scale(8f);
-            final float off = JBUI.scale(1f);
-            
-            g.setColor(background);
-            g.fill(new RoundRectangle2D.Float(off, off, width - 2f * off - off, h - 2f * off - off, R, R));
-
-            // 绘制两侧竖线
-            g.setColor(new JBColor(Gray._88.withAlpha(180), Gray._88.withAlpha(180)));
-            g.drawLine(
-                JBUI.scale(20), 
-                (int)(lineSpacing), 
-                JBUI.scale(20), 
-                (int)(lineSpacing * 5)
-            );
-            g.drawLine(
-                width - JBUI.scale(5), 
-                (int)(lineSpacing), 
-                width - JBUI.scale(5), 
-                (int)(lineSpacing * 5)
-            );
-
-            paintProgress(g, width, height, false, 0);
-
-            g.translate(0, -(c.getHeight() - h) / 2);
-            config.restore();
-
-            // 更新动画状态并确保不会停止
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - lastUpdate > FRAME_DELAY) {
-                animationIndex = (animationIndex + JBUI.scale(3)) % (width + JBUI.scale(10));
-                lastUpdate = currentTime;
-                
-                // 添加更详细的调试日志
-                if (animationIndex % 100 == 0) {
-                    LOG.info(String.format(
-                        "动画状态: index=%d, frames=%d, time=%d, disposed=%b, width=%d", 
-                        animationIndex, frames.size(), currentTime, isDisposed, width
-                    ));
-                }
-            }
-
-            // 确保继续动画
-            if (!isDisposed) {
-                c.repaint(FRAME_DELAY);
-            }
-
-        } catch (Exception e) {
-            LOG.error("绘制过程发生错误", e);
-            super.paintIndeterminate(g2d, c);
+    
+        Graphics2D g = (Graphics2D) g2d;
+        Insets b = progressBar.getInsets();
+        int width = progressBar.getWidth() - (b.right + b.left);
+        int height = progressBar.getHeight() - (b.top + b.bottom);
+    
+        if (width <= 0 || height <= 0) {
+            return;
         }
+    
+        GraphicsConfig config = GraphicsUtil.setupAAPainting(g);
+        g.translate(0, (c.getHeight() - height) / 2);
+    
+        // 计算尺寸
+        final int h = getPreferredSize(c).height;
+        final float lineSpacing = h / 6.0f;  // 五线谱间距
+        
+        // 绘制背景
+        Container parent = c.getParent();
+        Color background = parent != null ? parent.getBackground() : UIUtil.getPanelBackground();
+        
+        if (!isEven(c.getHeight() - h)) height++;
+    
+        final float R = JBUI.scale(8f);
+        final float off = JBUI.scale(1f);
+        
+        g.setColor(background);
+        g.fill(new RoundRectangle2D.Float(off, off, width - 2f * off - off, h - 2f * off - off, R, R));
+    
+        // 绘制两侧竖线
+        g.setColor(new JBColor(Gray._88.withAlpha(180), Gray._88.withAlpha(180)));
+        g.drawLine(
+            JBUI.scale(20), 
+            (int)(lineSpacing), 
+            JBUI.scale(20), 
+            (int)(lineSpacing * 5)
+        );
+        g.drawLine(
+            width - JBUI.scale(5), 
+            (int)(lineSpacing), 
+            width - JBUI.scale(5), 
+            (int)(lineSpacing * 5)
+        );
+    
+        paintProgress(g, width, height, false, 0);
+    
+        g.translate(0, -(c.getHeight() - h) / 2);
+        config.restore();
+    
+        // 更新动画状态并确保不会停止
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastUpdate > FRAME_DELAY) {
+            animationIndex = (animationIndex + JBUI.scale(3)) % (width + JBUI.scale(10));
+            lastUpdate = currentTime;
+    
+            // 添加更详细的调试日志
+            if (animationIndex % 100 == 0) {
+                LOG.info(String.format(
+                    "动画状态: index=%d, frames=%d, time=%d, disposed=%b, width=%d, showing=%b, visible=%b", 
+                    animationIndex, frames.size(), currentTime, isDisposed, width, c.isShowing(), c.isVisible()
+                ));
+            }
+        }
+    
+        // 确保继续动画，但只有在组件仍然可见且未被销毁时
+        if (!isDisposed && c.isShowing() && c.isVisible()) {
+            c.repaint(FRAME_DELAY);
+        } else {
+            LOG.info("不再请求重绘，组件状态: disposed=" + isDisposed + ", showing=" + c.isShowing() + ", visible=" + c.isVisible());
+        }
+    
     }
 
     public int getAnimationIndex() {
@@ -402,7 +408,9 @@ public class CXKProgressBarUI extends BasicProgressBarUI {
     }
 
     public CXKProgressBarUI() {
+        // 重置全局状态
+        isGloballyDisposed = false;
         // 立即加载图片
         loadImages();
     }
-} 
+}
